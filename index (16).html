@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AUS Finance - Darwin</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ─────────────────────────────────────────
+   TOKENS  — restrained professional palette
+   Inspired by Xero / MYOB dark variant
+   Signature: ruled hairlines + uppercase
+   data labels as the typographic accent
+───────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:        #111318;   /* deepest bg */
+  --surf:      #16191F;   /* sidebar */
+  --card:      #1C1F27;   /* cards */
+  --card2:     #20232C;   /* nested / inputs */
+  --raised:    #252831;   /* hover state */
+
+  /* Borders */
+  --rule:      #262930;   /* table rules, dividers */
+  --rule2:     #2E323C;   /* card borders */
+
+  /* Semantic colours — desaturated, professional */
+  --green:     #2FB784;   /* income / positive */
+  --green-bg:  rgba(47,183,132,.08);
+  --red:       #E05454;   /* expense / negative */
+  --red-bg:    rgba(224,84,84,.08);
+  --amber:     #D4922A;   /* warnings / setup costs */
+  --amber-bg:  rgba(212,146,42,.08);
+  --slate:     #5B8FBF;   /* neutral data / charts */
+  --slate-bg:  rgba(91,143,191,.08);
+
+  /* Text */
+  --t1:  #D8DCE8;   /* primary */
+  --t2:  #7D8494;   /* secondary */
+  --t3:  #454A57;   /* muted / disabled */
+
+  /* Accent — a single restrained teal, used sparingly */
+  --accent:    #2FB784;
+  --acc-bg:    rgba(47,183,132,.08);
+  --acc-border:rgba(47,183,132,.22);
+}
+
+/* ── Reset ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:'Inter',sans-serif;font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(47,183,132,.2)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--t3)}
+.num{font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ── Layout ── */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:196px;flex-shrink:0;background:var(--surf);border-right:1px solid var(--rule);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{flex:1;overflow-x:hidden;padding:32px 36px 72px;min-width:0}
+
+/* ── Sidebar ── */
+.sb-brand{padding:20px 16px 16px;border-bottom:1px solid var(--rule)}
+.sb-brand-name{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:.1px}
+.sb-brand-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.sb-brand-mark{width:6px;height:24px;background:var(--accent);border-radius:1px;flex-shrink:0}
+.sb-section{padding:16px 10px 6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--t3);padding-left:14px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;margin:1px 6px;border-radius:5px;cursor:pointer;color:var(--t2);font-size:12.5px;font-weight:500;transition:background .1s,color .1s;user-select:none}
+.nav-item:hover{background:var(--raised);color:var(--t1)}
+.nav-item.active{background:var(--acc-bg);color:var(--accent);font-weight:600}
+.nav-item.active svg{stroke:var(--accent)}
+.nav-item svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;stroke-width:2;fill:none}
+.sb-footer{margin-top:auto;padding:10px 6px 14px;border-top:1px solid var(--rule)}
+
+/* ── Page chrome ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--rule);flex-wrap:wrap;gap:12px}
+.page-title{font-size:16px;font-weight:700;color:var(--t1);letter-spacing:-.2px}
+.page-sub{font-size:12px;color:var(--t3);margin-top:3px}
+.sec-title{font-size:12.5px;font-weight:600;color:var(--t1);margin-bottom:12px}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--rule2);border-radius:8px;padding:20px}
+.card-sm{background:var(--card);border:1px solid var(--rule2);border-radius:6px;padding:14px 16px}
+.card-inner{background:var(--card2);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
+.card-tight{background:var(--card);border:1px solid var(--rule2);border-radius:8px;overflow:hidden}
+
+/* ── KPI ── */
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:6px}
+.kpi-val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px;line-height:1}
+.kpi-val-lg{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.8px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--t3);margin-top:5px}
+
+/* ── Divider ── */
+.rule{height:1px;background:var(--rule);margin:14px 0}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:5px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .12s;white-space:nowrap;letter-spacing:-.1px}
+.btn-primary{background:var(--accent);color:#0E1A14}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--rule2)}
+.btn-ghost:hover{background:var(--raised);color:var(--t1)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(224,84,84,.2)}
+.btn-danger:hover{background:rgba(224,84,84,.14)}
+.btn-xs{padding:4px 10px;font-size:11.5px;border-radius:4px}
+
+/* ── Forms ── */
+input,select,textarea{background:var(--card2);border:1px solid var(--rule2);color:var(--t1);border-radius:5px;padding:8px 11px;font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .12s,box-shadow .12s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,183,132,.1)}
+input::placeholder{color:var(--t3)}
+select option{background:var(--card2)}
+.field-label{font-size:11px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:600;letter-spacing:.2px;white-space:nowrap;text-transform:uppercase}
+.b-income      {background:var(--green-bg);color:var(--green)}
+.b-groceries   {background:rgba(94,186,125,.08);color:#5EBA7D}
+.b-transport   {background:var(--slate-bg);color:var(--slate)}
+.b-bills       {background:var(--amber-bg);color:var(--amber)}
+.b-entertainment{background:rgba(155,121,200,.08);color:#9B79C8}
+.b-misc        {background:rgba(125,132,148,.08);color:var(--t2)}
+.b-setup       {background:var(--red-bg);color:var(--red)}
+
+/* ── Table ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;padding:9px 14px;text-align:left;border-bottom:1px solid var(--rule2);background:var(--card2)}
+.tbl td{padding:9px 14px;font-size:12.5px;border-bottom:1px solid var(--rule);color:var(--t1)}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--raised)}
+.tbl-num{font-variant-numeric:tabular-nums;text-align:right}
+
+/* ── Progress ── */
+.prog-track{height:5px;background:var(--rule2);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;transition:width .45s cubic-bezier(.4,0,.2,1)}
+.prog-track-md{height:8px;background:var(--rule2);border-radius:3px;overflow:hidden}
+.prog-fill-md{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ── Drop zone ── */
+.drop-zone{border:1px dashed var(--rule2);border-radius:8px;padding:48px 32px;text-align:center;cursor:pointer;transition:all .15s;color:var(--t3)}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:var(--acc-bg);color:var(--t2)}
+
+/* ── Pages ── */
+.page{display:none}.page.active{display:block}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid var(--rule2);border-left:3px solid var(--accent);border-radius:6px;padding:11px 16px;font-size:12.5px;font-weight:500;z-index:9999;transform:translateY(10px);opacity:0;pointer-events:none;transition:all .2s;max-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.35)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.err{border-left-color:var(--red)}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:800;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-box{background:var(--card);border:1px solid var(--rule2);border-radius:10px;padding:24px;width:440px;max-width:calc(100vw - 32px);max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.modal-title{font-size:14px;font-weight:700;margin-bottom:18px;color:var(--t1);padding-bottom:14px;border-bottom:1px solid var(--rule)}
+
+/* ── Category expandable ── */
+.cat-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rule);cursor:pointer;transition:background .1s}
+.cat-row:hover{background:var(--raised)}
+.cat-row:last-of-type{border-bottom:none}
+.cat-expand{display:none}.cat-expand.open{display:block}
+
+/* ── Week header ── */
+.week-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--card2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);cursor:pointer;user-select:none}
+.week-hdr:hover{background:var(--raised)}
+.week-hdr:first-child{border-top:none}
+
+/* ── Spend bar ── */
+.spend-bar-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.spend-bar-label{width:108px;font-size:12px;color:var(--t2);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spend-bar-wrap{flex:1;height:6px;background:var(--rule2);border-radius:2px;overflow:hidden}
+.spend-bar-fill{height:100%;border-radius:2px;transition:width .4s}
+.spend-bar-amt{width:64px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;flex-shrink:0}
+
+/* ── Goal timeline ── */
+.tl-wrap{display:flex;gap:0;overflow-x:auto;padding-bottom:2px}
+.tl-node{flex:1;min-width:88px;text-align:center;position:relative}
+.tl-node::before{content:'';position:absolute;top:11px;left:50%;right:-50%;height:1px;background:var(--rule2);z-index:0}
+.tl-node:last-child::before{display:none}
+.tl-dot{width:24px;height:24px;border-radius:50%;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;position:relative;z-index:1;border:2px solid var(--rule2);background:var(--card2);color:var(--t3)}
+.tl-dot.done{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.tl-dot.now{background:var(--accent);border-color:var(--accent);color:#0E1A14}
+.tl-lbl{font-size:10px;font-weight:600;color:var(--t2);white-space:pre-line;text-align:center;line-height:1.3}
+.tl-date{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ── Inline status pills ── */
+.pill{display:inline-block;padding:2px 7px;border-radius:2px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.pill-up{background:var(--green-bg);color:var(--green)}
+.pill-dn{background:var(--red-bg);color:var(--red)}
+.pill-warn{background:var(--amber-bg);color:var(--amber)}
+
+/* ── Month tabs ── */
+.mo-tab{padding:5px 9px;border-radius:4px;font-size:11.5px;font-weight:500;cursor:pointer;color:var(--t3);transition:all .1s;border:1px solid transparent}
+.mo-tab:hover{color:var(--t2)}
+.mo-tab.has{color:var(--t2)}
+.mo-tab.active{background:var(--acc-bg);color:var(--accent);border-color:var(--acc-border);font-weight:600}
+
+/* ── Stat row (label : value) ── */
+.stat-row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--rule)}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{font-size:12px;color:var(--t2)}
+.stat-val{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--t1)}
+
+/* ── Responsive ── */
+@media(max-width:720px){
+  .sidebar{width:48px}
+  .sidebar .nav-label,.sb-brand-name,.sb-brand-sub,.sb-section{display:none}
+  .main{padding:16px 14px 40px}
+  .hide-sm{display:none}
+}
+
+#sync-indicator{font-size:11px;font-weight:600;letter-spacing:.2px;transition:color .3s}
+</style>
+</head>
+<body>
+
+<!-- ══════════ AUTH SCREEN (shown when not logged in) ══════════ -->
+<div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;align-items:center;justify-content:center">
+  <div style="width:360px;max-width:calc(100vw - 32px)">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="width:40px;height:40px;background:var(--acc-bg);border:1px solid var(--acc-border);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <div style="width:16px;height:3px;background:var(--accent);border-radius:2px"></div>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--t1)">AUS Finance</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:3px">Darwin · WHV 417</div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;background:var(--card2);border-radius:8px;padding:3px;margin-bottom:20px;border:1px solid var(--rule2)">
+      <div id="tab-signin" style="flex:1;text-align:center;padding:7px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--card);color:var(--t1);transition:all .12s" onclick="showAuthTab('signin')">Sign In</div>
+      <div id="tab-signup" style="flex:1;text-align:center;padding:7px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--t2);transition:all .12s" onclick="showAuthTab('signup')">Create Account</div>
+    </div>
+
+    <div class="card">
+      <div id="auth-error" style="display:none;background:var(--red-bg);border:1px solid rgba(224,84,84,.25);border-radius:6px;padding:10px 12px;font-size:12.5px;color:var(--red);margin-bottom:14px"></div>
+
+      <div style="margin-bottom:12px">
+        <label class="field-label">Email</label>
+        <input type="email" id="auth-email" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div style="margin-bottom:6px">
+        <label class="field-label">Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()">
+      </div>
+      <div id="auth-password-hint" style="font-size:11px;color:var(--t3);margin-bottom:16px;display:none">Minimum 6 characters</div>
+
+      <button class="btn btn-primary" onclick="doAuth()" id="auth-btn" style="width:100%;justify-content:center;padding:10px;margin-bottom:12px">
+        Sign In
+      </button>
+
+      <div id="auth-loading" style="display:none;text-align:center;font-size:12px;color:var(--t3);padding:8px">Authenticating…</div>
+
+      <div id="auth-confirm-msg" style="display:none;background:var(--acc-bg);border:1px solid var(--acc-border);border-radius:6px;padding:12px;font-size:12.5px;color:var(--accent)">
+        ✓ Account created! Check your email to confirm, then sign in.
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;font-size:11.5px;color:var(--t3)">
+      Your data is encrypted and private.<br>
+      Hosted on <a href="https://supabase.com" target="_blank" style="color:var(--accent);text-decoration:none">Supabase</a> — free tier.
+    </div>
+  </div>
+</div>
+
+
+<div id="app-layout" class="layout" style="display:none">
+<aside class="sidebar">
+  <div class="sb-brand" style="display:flex;align-items:center;gap:10px">
+    <div class="sb-brand-mark"></div>
+    <div><div class="sb-brand-name">AUS Finance</div><div class="sb-brand-sub">Darwin WHV 417</div></div>
+  </div>
+  <div class="sb-section">Reports</div>
+  <nav>
+    <div class="nav-item active" onclick="nav('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="nav-label">Overview</span>
+    </div>
+    <div class="nav-item" onclick="nav('finances')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="nav-label">Finances</span>
+    </div>
+    <div class="nav-item" onclick="nav('goals')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      <span class="nav-label">Goals</span>
+    </div>
+  </nav>
+  <div class="sb-section">Data</div>
+  <nav>
+    <div class="nav-item" onclick="nav('import')">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span class="nav-label">Import CSV</span>
+    </div>
+    <div class="nav-item" onclick="nav('add')">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span class="nav-label">New Entry</span>
+    </div>
+    <div class="nav-item" onclick="nav('setup')">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span class="nav-label">Setup Costs</span>
+    </div>
+  </nav>
+  <div style="padding:10px 14px 8px;border-top:1px solid var(--rule);margin-top:auto">
+    <div style="font-size:10px;color:var(--t3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Account</div>
+    <div id="user-email-display" style="font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px"></div>
+    <div id="sync-indicator" style="font-size:11.5px;font-weight:600;color:var(--t3)">Not signed in</div>
+  </div>
+  <div style="padding:6px 6px 14px">
+    <div class="nav-item" onclick="manualSync()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      <span class="nav-label">Sync Now</span>
+    </div>
+    <div class="nav-item" onclick="exportJSON()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span class="nav-label">Export</span>
+    </div>
+    <div class="nav-item" onclick="signOut()" style="color:var(--red)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <span class="nav-label">Sign Out</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ OVERVIEW (Dashboard) ══════════ -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Financial Overview</div>
+      <div class="page-sub" id="db-period-label">Loading…</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="btn btn-ghost btn-xs" onclick="shiftYear(-1)">‹</button>
+      <span id="db-year" style="font-size:13px;font-variant-numeric:tabular-nums;color:var(--t1);padding:0 4px;font-weight:600"></span>
+      <button class="btn btn-ghost btn-xs" onclick="shiftYear(1)">›</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+    <div class="card-sm">
+      <div class="kpi-label">Total Income</div>
+      <div class="kpi-val" id="db-income" style="color:var(--green)">$0.00</div>
+      <div class="kpi-sub" id="db-income-n">0 credits</div>
+    </div>
+    <div class="card-sm">
+      <div class="kpi-label">Total Expenses</div>
+      <div class="kpi-val" id="db-spent" style="color:var(--red)">$0.00</div>
+      <div class="kpi-sub" id="db-spent-n">0 debits</div>
+    </div>
+    <div class="card-sm">
+      <div class="kpi-label">Net Savings</div>
+      <div class="kpi-val" id="db-net">$0.00</div>
+      <div class="kpi-sub" id="db-wkly">$0 / wk avg</div>
+    </div>
+    <div class="card-sm">
+      <div class="kpi-label">Real ROI</div>
+      <div class="kpi-val" id="db-roi">$0.00</div>
+      <div class="kpi-sub" id="db-roi-sub">net − setup costs</div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div style="display:grid;grid-template-columns:3fr 2fr;gap:12px;margin-bottom:12px">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span class="sec-title" style="margin:0">Monthly Cashflow</span>
+        <div style="display:flex;gap:12px">
+          <span style="font-size:11px;color:var(--t3)"><span style="color:var(--green)">▪</span> Income</span>
+          <span style="font-size:11px;color:var(--t3)"><span style="color:var(--red)">▪</span> Expenses</span>
+          <span style="font-size:11px;color:var(--t3)"><span style="color:var(--slate)">▪</span> Net</span>
+        </div>
+      </div>
+      <div style="height:196px"><canvas id="chart-cashflow"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="sec-title">Spending by Category</div>
+      <div style="height:196px"><canvas id="chart-donut"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Bottom row -->
+  <div style="display:grid;grid-template-columns:5fr 4fr;gap:12px">
+    <div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <span class="sec-title" style="margin:0">Annual Goal</span>
+        <span id="db-goal-pct" class="pill pill-warn">0%</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px">
+        <span class="kpi-val-lg" id="db-saved-big" style="color:var(--green)">$0</span>
+        <span style="color:var(--t3);font-size:12px">of <span id="db-goal-of" style="color:var(--t2)">$28,000</span></span>
+      </div>
+      <div class="prog-track-md" style="margin-bottom:10px">
+        <div class="prog-fill-md" id="db-goal-bar" style="width:0%;background:var(--green)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:14px">
+        <span id="db-goal-rem">$0 remaining</span>
+        <span id="db-goal-eta">—</span>
+      </div>
+      <div class="rule" style="margin:10px 0"></div>
+      <div class="stat-row"><span class="stat-lbl">Setup costs (AUD)</span><span class="stat-val" id="db-setup-tot" style="color:var(--amber)">$0.00</span></div>
+      <div class="stat-row"><span class="stat-lbl">Break-even</span><span id="db-breakeven" class="stat-val">—</span></div>
+      <div class="stat-row"><span class="stat-lbl">Debt remaining</span><span class="stat-val" id="db-debt-rem" style="color:var(--red)">—</span></div>
+    </div>
+    <div class="card-tight">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--rule)">
+        <span class="sec-title" style="margin:0">Recent Transactions</span>
+      </div>
+      <div id="db-recent" style="overflow-y:auto;max-height:230px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ FINANCES ══════════ -->
+<div id="page-finances" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Finances</div>
+      <div class="page-sub">Income &amp; expenses with category breakdown</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <div id="fin-month-nav" style="display:flex;gap:3px;flex-wrap:wrap"></div>
+      <div style="display:flex;gap:5px;align-items:center;margin-left:6px">
+        <button class="btn btn-ghost btn-xs" onclick="shiftYear(-1)">‹</button>
+        <span id="fin-year" style="font-size:13px;font-weight:600;color:var(--t1);padding:0 4px;font-variant-numeric:tabular-nums"></span>
+        <button class="btn btn-ghost btn-xs" onclick="shiftYear(1)">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Month KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+    <div class="card-sm" style="border-left:3px solid var(--green)">
+      <div class="kpi-label">Month Income</div>
+      <div class="kpi-val" id="fin-m-income" style="color:var(--green)">$0</div>
+    </div>
+    <div class="card-sm" style="border-left:3px solid var(--red)">
+      <div class="kpi-label">Month Expenses</div>
+      <div class="kpi-val" id="fin-m-spent" style="color:var(--red)">$0</div>
+    </div>
+    <div class="card-sm" style="border-left:3px solid var(--slate)">
+      <div class="kpi-label">Month Net</div>
+      <div class="kpi-val" id="fin-m-net">$0</div>
+    </div>
+  </div>
+
+  <!-- Income / Expenses side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="card" style="border-top:2px solid var(--green)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span class="sec-title" style="margin:0;color:var(--green)">Income</span>
+        <button class="btn btn-ghost btn-xs" onclick="openAddFor('income')">+ Add</button>
+      </div>
+      <div id="fin-income-bars" style="margin-bottom:14px"></div>
+      <div class="rule" style="margin:10px 0"></div>
+      <div id="fin-income-cats"></div>
+    </div>
+    <div class="card" style="border-top:2px solid var(--red)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span class="sec-title" style="margin:0;color:var(--red)">Expenses</span>
+        <button class="btn btn-ghost btn-xs" onclick="openAddFor('expense')">+ Add</button>
+      </div>
+      <div id="fin-expense-bars" style="margin-bottom:14px"></div>
+      <div class="rule" style="margin:10px 0"></div>
+      <div id="fin-expense-cats"></div>
+    </div>
+  </div>
+
+  <!-- Weekly table -->
+  <div class="card-tight">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span class="sec-title" style="margin:0">Week-by-Week</span>
+      <input type="search" id="fin-search" placeholder="Search transactions…" style="width:200px;padding:6px 10px;font-size:12px" oninput="renderFinances()">
+    </div>
+    <div id="fin-weeks"></div>
+  </div>
+</div>
+
+<!-- ══════════ IMPORT CSV ══════════ -->
+<div id="page-import" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Import Statement</div>
+      <div class="page-sub">CommBank · NAB · ANZ · Westpac — drag your exported CSV</div>
+    </div>
+  </div>
+
+  <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-input').click()">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="width:36px;height:36px;margin:0 auto 12px;display:block"><path stroke-linecap="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+    <div style="font-size:13.5px;font-weight:600;color:var(--t1)">Drop CSV file here, or click to browse</div>
+    <div style="font-size:12px;color:var(--t3);margin-top:5px">Accepts standard Australian bank exports · Date / Amount / Description columns</div>
+    <input type="file" id="csv-input" accept=".csv,.txt" style="display:none" onchange="handleCSV(this)">
+  </div>
+
+  <div id="import-preview" style="display:none;margin-top:22px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div>
+        <span style="font-size:14px;font-weight:600">Review &amp; Categorise</span>
+        <span id="import-count-label" style="font-size:12px;color:var(--t3);margin-left:8px"></span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="cancelImport()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmImport()">Confirm Import</button>
+      </div>
+    </div>
+    <div class="card-tight" style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th>Date</th><th>Description</th><th class="tbl-num">Amount</th><th>Category</th><th></th></tr></thead>
+        <tbody id="import-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SETUP COSTS ══════════ -->
+<div id="page-setup" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Arrival Investment</div>
+      <div class="page-sub">One-time setup costs — USD ↔ AUD conversion</div>
+    </div>
+    <button class="btn btn-primary" onclick="openSetupModal()">+ Add Cost</button>
+  </div>
+
+  <!-- Exchange rate bar -->
+  <div class="card-inner" style="margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--t3)">USD → AUD Rate</span>
+    <input type="number" id="usd-rate" step="0.0001" placeholder="1.5500" style="width:110px;padding:7px 10px;font-size:13px" oninput="saveRate();renderSetup()">
+    <span style="font-size:12px;color:var(--t3)">1 USD = <span id="rate-display" style="font-variant-numeric:tabular-nums;color:var(--amber);font-weight:600">—</span> AUD</span>
+    <span style="font-size:11px;color:var(--t3);margin-left:auto">Update manually when the rate changes</span>
+  </div>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+    <div class="card-sm">
+      <div class="kpi-label">Total (AUD)</div>
+      <div class="kpi-val" id="sc-total-aud" style="color:var(--amber)">$0.00</div>
+    </div>
+    <div class="card-sm">
+      <div class="kpi-label">Total (USD equiv.)</div>
+      <div class="kpi-val" id="sc-total-usd" style="color:var(--t2)">$0.00</div>
+    </div>
+    <div class="card-sm">
+      <div class="kpi-label">Net Savings</div>
+      <div class="kpi-val" id="sc-net" style="color:var(--green)">$0.00</div>
+    </div>
+    <div class="card-sm">
+      <div class="kpi-label">Real ROI</div>
+      <div class="kpi-val" id="sc-roi">$0.00</div>
+    </div>
+  </div>
+
+  <!-- Quick add -->
+  <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--t3)">Quick add:</span>
+    <button class="btn btn-ghost btn-xs" onclick="quickSetup('Visa / Trámites')">Visa</button>
+    <button class="btn btn-ghost btn-xs" onclick="quickSetup('Vuelos / Seguro')">Vuelos</button>
+    <button class="btn btn-ghost btn-xs" onclick="quickSetup('Alojamiento Inicial')">Alojamiento</button>
+    <button class="btn btn-ghost btn-xs" onclick="quickSetup('Vehículo / Transporte')">Vehículo</button>
+    <button class="btn btn-ghost btn-xs" onclick="quickSetup('Herramientas / Licencias')">Herramientas</button>
+  </div>
+
+  <div class="card-tight">
+    <table class="tbl">
+      <thead><tr><th>Category</th><th>Description</th><th class="tbl-num">USD</th><th class="tbl-num">AUD</th><th>Date</th><th></th></tr></thead>
+      <tbody id="sc-body"></tbody>
+    </table>
+    <div id="sc-empty" style="padding:40px;text-align:center;color:var(--t3);font-size:12.5px">No setup costs recorded yet</div>
+  </div>
+</div>
+
+<!-- ══════════ GOALS ══════════ -->
+<div id="page-goals" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Goals &amp; Forecast</div>
+      <div class="page-sub">Savings targets, debt tracker, and break-even calculator</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+    <!-- Config -->
+    <div class="card">
+      <div class="sec-title">Targets</div>
+      <div style="display:grid;gap:12px">
+        <div>
+          <label class="field-label">Weekly Savings Goal (AUD)</label>
+          <input type="number" id="g-weekly" placeholder="600" oninput="saveGoals();renderGoals()">
+        </div>
+        <div>
+          <label class="field-label">Annual Savings Goal (AUD)</label>
+          <input type="number" id="g-annual" placeholder="28000" oninput="saveGoals();renderGoals()">
+        </div>
+        <div class="rule" style="margin:4px 0"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="field-label">Family Debt Total (AUD)</label>
+            <input type="number" id="g-debt" placeholder="2571" oninput="saveGoals();renderGoals()">
+          </div>
+          <div>
+            <label class="field-label">Already Repaid (AUD)</label>
+            <input type="number" id="g-repaid" placeholder="0" oninput="saveGoals();renderGoals()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Debt card -->
+    <div class="card">
+      <div class="sec-title">Family Debt Progress</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <div><div class="kpi-label">Remaining</div><div class="kpi-val" id="g-debt-rem" style="color:var(--red)">$0</div></div>
+        <div style="text-align:right"><div class="kpi-label">Repaid</div><div class="kpi-val" id="g-debt-paid" style="color:var(--green)">$0</div></div>
+      </div>
+      <div class="prog-track-md" style="margin-bottom:8px">
+        <div class="prog-fill-md" id="g-debt-bar" style="width:0%;background:var(--amber)"></div>
+      </div>
+      <div id="g-debt-pct" style="font-size:11px;color:var(--t3);margin-bottom:12px">0% repaid</div>
+      <div class="rule" style="margin:10px 0"></div>
+      <div id="g-debt-eta" style="font-size:12.5px;color:var(--t2);line-height:1.5">—</div>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div class="card" style="border:1px solid var(--acc-border);margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="sec-title" style="margin:0">Savings Calculator</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:3px">Based on weekly savings rate — adjust to model scenarios</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label class="field-label" style="margin:0">Weekly rate (AUD)</label>
+        <input type="number" id="calc-override" placeholder="600" style="width:100px;padding:7px 10px;font-size:13px" oninput="renderGoals()">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+      <div class="card-inner">
+        <div class="kpi-label">Annual Goal — Reached</div>
+        <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green);margin-bottom:4px" id="calc-annual-date">—</div>
+        <div style="font-size:11px;color:var(--t3)" id="calc-annual-weeks">Set a weekly goal</div>
+      </div>
+      <div class="card-inner">
+        <div class="kpi-label">Debt-Free Date</div>
+        <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--amber);margin-bottom:4px" id="calc-debt-date">—</div>
+        <div style="font-size:11px;color:var(--t3)" id="calc-debt-weeks">No debt set</div>
+      </div>
+      <div class="card-inner">
+        <div class="kpi-label">Saved to Date</div>
+        <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--slate);margin-bottom:4px" id="calc-saved-now">$0</div>
+        <div style="font-size:11px;color:var(--t3)" id="calc-saved-weeks">0 wks accumulated</div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);margin-bottom:10px">Milestone Timeline</div>
+    <div id="calc-timeline" class="tl-wrap"></div>
+  </div>
+
+  <!-- Monthly progress -->
+  <div class="card-tight">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--rule)">
+      <span class="sec-title" style="margin:0">Monthly Savings vs Target</span>
+    </div>
+    <div style="padding:14px 16px" id="g-monthly-bars"></div>
+  </div>
+</div>
+
+<!-- ══════════ ADD TRANSACTION ══════════ -->
+<div id="page-add" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">New Entry</div>
+      <div class="page-sub">Manual income or expense transaction</div>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:500px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div><label class="field-label">Date</label><input type="date" id="add-date"></div>
+      <div>
+        <label class="field-label">Type</label>
+        <select id="add-type" onchange="onTypeChange()">
+          <option value="expense">Expense (debit)</option>
+          <option value="income">Income (credit)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="field-label">Description</label>
+      <input type="text" id="add-desc" placeholder="e.g. Woolworths grocery shop" oninput="autoDetect()">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div><label class="field-label">Amount (AUD)</label><input type="number" id="add-amount" placeholder="0.00" step="0.01" min="0"></div>
+      <div>
+        <label class="field-label">Category</label>
+        <select id="add-cat">
+          <option value="Income">Income</option>
+          <option value="Groceries">Groceries</option>
+          <option value="Transport">Transport</option>
+          <option value="Rent/Bills">Rent / Bills</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Misc" selected>Misc</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <label class="field-label">Notes</label>
+      <input type="text" id="add-notes" placeholder="Optional">
+    </div>
+    <button class="btn btn-primary" onclick="addTx()" style="width:100%;justify-content:center;padding:10px">Save Entry</button>
+  </div>
+</div>
+
+</main>
+</div><!-- /layout -->
+
+<!-- ══════════ SETUP MODAL ══════════ -->
+<div id="setup-modal" class="modal-bg" style="display:none" onclick="if(event.target===this)closeSetupModal()">
+  <div class="modal-box">
+    <div class="modal-title">Add Setup Cost</div>
+    <div style="margin-bottom:12px">
+      <label class="field-label">Category</label>
+      <select id="sc-cat"><option>Visa / Trámites</option><option>Vuelos / Seguro</option><option>Alojamiento Inicial</option><option>Vehículo / Transporte</option><option>Herramientas / Licencias</option><option>Otro</option></select>
+    </div>
+    <div style="margin-bottom:12px">
+      <label class="field-label">Description</label>
+      <input type="text" id="sc-desc" placeholder="e.g. Honda CB125E purchase">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <label class="field-label">Currency</label>
+        <select id="sc-currency" onchange="updateSCPreview()"><option value="AUD">AUD</option><option value="USD">USD</option></select>
+      </div>
+      <div>
+        <label class="field-label">Amount</label>
+        <input type="number" id="sc-amount" placeholder="0.00" step="0.01" min="0" oninput="updateSCPreview()">
+      </div>
+      <div>
+        <label class="field-label">Date</label>
+        <input type="date" id="sc-date">
+      </div>
+    </div>
+    <div id="sc-conversion-preview" style="background:var(--card2);border-radius:5px;padding:9px 12px;font-size:12px;color:var(--t2);margin-bottom:16px;display:none;border-left:3px solid var(--amber)">
+      Converted: <span id="sc-aud-preview" style="font-weight:700;color:var(--amber)"></span> AUD
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--rule)">
+      <button class="btn btn-ghost" onclick="closeSetupModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSetupCost()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+</div>
+
+
+<div id="setup-modal" class="modal-bg" style="display:none" onclick="if(event.target===this)closeSetupModal()">
+  <div class="modal-box">
+    <div class="modal-title">Add Setup Cost</div>
+    <div style="margin-bottom:12px">
+      <label class="field-label">Category</label>
+      <select id="sc-cat"><option>Visa / Tramites</option><option>Vuelos / Seguro</option><option>Alojamiento Inicial</option><option>Vehiculo / Transporte</option><option>Herramientas / Licencias</option><option>Otro</option></select>
+    </div>
+    <div style="margin-bottom:12px">
+      <label class="field-label">Description</label>
+      <input type="text" id="sc-desc" placeholder="e.g. Honda CB125E purchase">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <label class="field-label">Currency</label>
+        <select id="sc-currency" onchange="updateSCPreview()"><option value="AUD">AUD</option><option value="USD">USD</option></select>
+      </div>
+      <div>
+        <label class="field-label">Amount</label>
+        <input type="number" id="sc-amount" placeholder="0.00" step="0.01" min="0" oninput="updateSCPreview()">
+      </div>
+      <div>
+        <label class="field-label">Date</label>
+        <input type="date" id="sc-date">
+      </div>
+    </div>
+    <div id="sc-conversion-preview" style="background:var(--card2);border-radius:5px;padding:9px 12px;font-size:12px;color:var(--t2);margin-bottom:16px;display:none;border-left:3px solid var(--amber)">
+      Converted: <span id="sc-aud-preview" style="font-weight:700;color:var(--amber)"></span> AUD
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--rule)">
+      <button class="btn btn-ghost" onclick="closeSetupModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSetupCost()">Save</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+// ???????????????????????????????????????????????????????
+//  SUPABASE CLOUD SYNC LAYER
+//  Replace SUPABASE_URL and SUPABASE_ANON_KEY with yours
+// ???????????????????????????????????????????????????????
+const SUPABASE_URL  = 'https://erwjnefghhneryqwgpdk.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_s-bmj4N_Nj85u6VU-V02Fw_YkxHle1v';
+
+// ?? Supabase REST helpers (no SDK needed) ??????????????
+async function sbFetch(path, opts={}){
+  const token = sbToken();
+  const res = await fetch(SUPABASE_URL+'/rest/v1/'+path, {
+    headers:{
+      'apikey': SUPABASE_ANON,
+      'Authorization': 'Bearer '+(token||SUPABASE_ANON),
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer||'return=representation',
+      ...opts.headers
+    },
+    ...opts
+  });
+  if(!res.ok){ const e=await res.text(); throw new Error(e); }
+  const ct=res.headers.get('content-type')||'';
+  return ct.includes('json') ? res.json() : [];
+}
+async function sbGet(table, params=''){
+  return sbFetch(table+'?'+params);
+}
+async function sbPost(table, data){
+  return sbFetch(table, {method:'POST', body:JSON.stringify(data)});
+}
+async function sbPatch(table, match, data){
+  return sbFetch(table+'?'+match, {method:'PATCH', body:JSON.stringify(data), prefer:'return=representation'});
+}
+async function sbDelete(table, match){
+  return sbFetch(table+'?'+match, {method:'DELETE', prefer:'return=minimal'});
+}
+async function sbUpsert(table, data){
+  return sbFetch(table, {method:'POST', body:JSON.stringify(data), headers:{'Prefer':'resolution=merge-duplicates,return=representation'}});
+}
+
+// ?? Auth ???????????????????????????????????????????????
+let _sbSession = null;
+function sbToken(){ return _sbSession?.access_token||null; }
+function sbUserId(){ return _sbSession?.user?.id||null; }
+
+async function sbSignUp(email, password){
+  const res = await fetch(SUPABASE_URL+'/auth/v1/signup',{
+    method:'POST',
+    headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
+    body: JSON.stringify({email,password})
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message||data.msg);
+  if(data.access_token){ _sbSession=data; sbSaveSession(data); }
+  return data;
+}
+async function sbSignIn(email, password){
+  const res = await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
+    method:'POST',
+    headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
+    body: JSON.stringify({email,password})
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message||data.msg||'Login failed');
+  _sbSession=data; sbSaveSession(data);
+  return data;
+}
+async function sbSignOut(){
+  try{
+    await fetch(SUPABASE_URL+'/auth/v1/logout',{
+      method:'POST',
+      headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+sbToken()}
+    });
+  }catch(e){}
+  _sbSession=null;
+  localStorage.removeItem('sb_session');
+}
+function sbSaveSession(s){ localStorage.setItem('sb_session', JSON.stringify(s)); }
+function sbLoadSession(){
+  try{
+    const s=localStorage.getItem('sb_session');
+    if(s){ _sbSession=JSON.parse(s); return true; }
+  }catch(e){}
+  return false;
+}
+async function sbRefreshSession(){
+  if(!_sbSession?.refresh_token) return false;
+  try{
+    const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{'apikey':SUPABASE_ANON,'Content-Type':'application/json'},
+      body: JSON.stringify({refresh_token:_sbSession.refresh_token})
+    });
+    const data=await res.json();
+    if(data.access_token){ _sbSession=data; sbSaveSession(data); return true; }
+  }catch(e){}
+  return false;
+}
+
+// ?? Cloud sync functions ???????????????????????????????
+let syncPending = false;
+let syncTimer   = null;
+
+function scheduleSave(){
+  // Debounce: save to cloud 1.5s after last change
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(()=>{ saveToCloud().catch(console.error); }, 1500);
+}
+
+async function saveToCloud(){
+  if(!sbUserId()) return;           // not logged in -> skip
+  if(syncPending) return;
+  syncPending = true;
+  setSyncIndicator('saving');
+  try{
+    await sbUpsert('user_data',[{
+      user_id:    sbUserId(),
+      data:       JSON.stringify({
+        transactions:  S.transactions,
+        setupCosts:    S.setupCosts,
+        goals:         S.goals,
+        usdRate:       S.usdRate,
+        parentCapital: S.parentCapital,
+        year:          S.year,
+        month:         S.month
+      }),
+      updated_at: new Date().toISOString()
+    }]);
+    setSyncIndicator('saved');
+  }catch(e){
+    setSyncIndicator('error');
+    console.error('Cloud save failed:',e);
+  }finally{
+    syncPending=false;
+  }
+}
+
+async function loadFromCloud(){
+  if(!sbUserId()) return false;
+  setSyncIndicator('syncing');
+  try{
+    const rows = await sbGet('user_data','user_id=eq.'+sbUserId()+'&select=data');
+    if(rows && rows.length && rows[0].data){
+      const d = JSON.parse(rows[0].data);
+      S.transactions  = d.transactions  || [];
+      S.setupCosts    = d.setupCosts    || [];
+      S.goals         = {...DEFAULT_STATE.goals, ...(d.goals||{})};
+      S.usdRate       = d.usdRate       || 1.55;
+      S.parentCapital = d.parentCapital || {usd:4900,repaidAUD:0};
+      S.year          = d.year          || new Date().getFullYear();
+      S.month         = d.month         || new Date().getMonth();
+      save(); // mirror to localStorage as cache
+      setSyncIndicator('saved');
+      return true;
+    }
+  }catch(e){
+    setSyncIndicator('error');
+    console.error('Cloud load failed:',e);
+  }
+  setSyncIndicator('offline');
+  return false;
+}
+
+// ?? Sync indicator ?????????????????????????????????????
+function setSyncIndicator(state){
+  const el=document.getElementById('sync-indicator');
+  if(!el) return;
+  const states={
+    saved:   {text:'OK Synced',    color:'var(--green)'},
+    saving:  {text:'^ Saving...',   color:'var(--amber)'},
+    syncing: {text:'v Syncing...',  color:'var(--amber)'},
+    error:   {text:'! Sync error',color:'var(--red)'},
+    offline: {text:'? Offline',   color:'var(--t3)'},
+    loggedout:{text:'Not signed in',color:'var(--t3)'}
+  };
+  const s=states[state]||states.offline;
+  el.textContent=s.text;
+  el.style.color=s.color;
+}
+
+// ?? Override save() to also schedule cloud sync ?????????
+function save(){
+  _localSave();
+  scheduleSave();
+}
+
+
+
+// ?????????????????????????????????????????
+//  STATE
+// ?????????????????????????????????????????
+const DEFAULT_STATE = {
+  transactions: [],
+  setupCosts:   [],
+  goals:        { weekly:600, annual:28000, debtTotal:0, debtRepaid:0 },
+  usdRate:      1.55,
+  parentCapital: { usd: 4900, repaidAUD: 0 }, // capital from parents - source of truth for debt
+  year:         new Date().getFullYear(),
+  month:        new Date().getMonth()
+};
+let S = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+// ?????????????????????????????????????????
+//  PERSIST
+// ?????????????????????????????????????????
+function _localSave(){ try{ localStorage.setItem('ausfinv3', JSON.stringify(S)); } catch(e){} }
+function load(){
+  try{
+    const raw = localStorage.getItem('ausfinv3');
+    if(raw){ const p=JSON.parse(raw); S={...DEFAULT_STATE,...p}; }
+  } catch(e){}
+}
+
+// ?????????????????????????????????????????
+//  HELPERS
+// ?????????????????????????????????????????
+const MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CATS = {
+  'Income':          { color:'#2FB784', cls:'b-income'         },
+  'Salary':          { color:'#2FB784', cls:'b-salary'         },
+  'Groceries':       { color:'#5EBA7D', cls:'b-groceries'      },
+  'Eating Out':      { color:'#9B79C8', cls:'b-eating-out'     },
+  'Transport':       { color:'#5B8FBF', cls:'b-transport'      },
+  'Fuel':            { color:'#5B8FBF', cls:'b-fuel'           },
+  'Rent':            { color:'#D4922A', cls:'b-rent'           },
+  'Bills':           { color:'#D4922A', cls:'b-bills'          },
+  'Phone/Internet':  { color:'#D4922A', cls:'b-phone-internet' },
+  'Health':          { color:'#E05454', cls:'b-health'         },
+  'Clothing':        { color:'#B48CC8', cls:'b-clothing'       },
+  'Subscriptions':   { color:'#64A0DC', cls:'b-subscriptions'  },
+  'Cash/ATM':        { color:'#8890A8', cls:'b-cash-atm'       },
+  'Savings':         { color:'#2FB784', cls:'b-savings'        },
+  'Internal':        { color:'#6A707E', cls:'b-internal'       },
+  'Misc':            { color:'#8890A8', cls:'b-misc'           },
+};
+const CAT_LIST = Object.keys(CATS);
+
+const CAT_RULES=[
+  // ?? Groceries
+  {keys:['woolworths','coles','aldi','iga','foodland','harris farm','supa valu','supermarket','grocery','fresh food','safeway','fruit','butcher'],cat:'Groceries'},
+  // ?? Eating Out / Takeaway
+  {keys:['uber eats','doordash','menulog','mcdonalds','mcdonald','hungry jack','kfc','pizza hut','dominos','subway','cafe','coffee','bar ','restaurant','tavern','bistro','takeaway','sushi','noodle','grill','bakery','hungry','oporto','guzman','red rooster','chicken'],cat:'Eating Out'},
+  // ?? Fuel
+  {keys:['7-eleven','shell','ampol','bp ','caltex','puma energy','viva energy','fuel','petrol','servo','united petroleum'],cat:'Fuel'},
+  // ?? Transport (non-fuel)
+  {keys:['uber ','translink','darwin bus','ntlink','transport for nsw','train','bus ','taxi','ola ','didi','parking','toll ','darwin city bus'],cat:'Transport'},
+  // ?? Rent
+  {keys:['rent ','rental','real estate','realestate','property manager','landlord','airbnb','accommodation'],cat:'Rent'},
+  // ?? Bills / Utilities
+  {keys:['origin energy','agl','synergy','horizon power','darwin water','territory water','electricit','utilities','water rate','council rate'],cat:'Bills'},
+  // ?? Phone / Internet
+  {keys:['telstra','optus','vodafone','belong','amaysim','boost mobile','aldi mobile','circles','numobile','moose mobile','internet','broadband','mobile plan','prepaid'],cat:'Phone/Internet'},
+  // ?? Health
+  {keys:['pharmacy','chemist','priceline','chemist warehouse','doctor','medical','dental','physio','hospital','medicare','health fund','medibank','bupa','nib ','hcf ','gym','fitness','crossfit','anytime fitness'],cat:'Health'},
+  // ?? Clothing
+  {keys:['kmart','target','big w','cotton on','uniqlo','h&m','zara','myer','david jones','spotlight','city beach','glue store','clothing','fashion','shoes','sneaker','bonds','rivers'],cat:'Clothing'},
+  // ?? Subscriptions
+  {keys:['netflix','spotify','disney','stan ','binge','kayo','apple ','google one','microsoft','adobe','amazon prime','youtube','hbo','paramount','audible'],cat:'Subscriptions'},
+  // ?? Cash / ATM
+  {keys:['atm ','cash withdrawal','cash advance','eftpos cash'],cat:'Cash/ATM'},
+  // ?? Salary / Income (external payments IN)
+  {keys:['salary','wages','payroll','pay day','employer','hays','manpower','adecco','recruit','payg','ato refund','centrelink','youth allow','casual pay','crew pay','shift pay','commission','bonus'],cat:'Salary'},
+];
+
+function autocat(desc, amount){
+  const l=(desc||'').toLowerCase();
+  // Internal CommBank transfers OUT - never income, use Internal category
+  if(l.includes('transfer to') || l.includes('osko to') || l.includes('pay to')) return 'Internal';
+  // CommBank own account / savings transfers
+  if((l.includes('netbank') || l.includes('commbank')) && amount > 0) return 'Savings';
+  if(l.includes('netbank') || l.includes('commbank')) return 'Internal';
+  // Transfer FROM someone = income received
+  if(l.includes('transfer from') && amount > 0) return 'Income';
+  if(l.includes('transfer from')) return 'Internal';
+  // Direct credit with no other match = income
+  if(l.includes('direct credit') && amount > 0) return 'Income';
+  for(const r of CAT_RULES) if(r.keys.some(k=>l.includes(k))) return r.cat;
+  return 'Misc';
+}
+function fmtAUD(n,sign=false){
+  const a=Math.abs(n).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(sign) return (n>=0?'+$':'-$')+a;
+  return (n<0?'-$':'$')+a;
+}
+function fmtShort(n){
+  return fmtAUD(n);
+}
+function parseDate(s){
+  if(!s) return null; s=s.trim();
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const[d,m,y]=s.split('/');return new Date(+y,+m-1,+d);}
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s);
+  return null;
+}
+function toISO(d){return d instanceof Date?d.toISOString():new Date(d).toISOString();}
+function toInputDate(d){const dt=new Date(d);return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;}
+function pad(n){return String(n).padStart(2,'0');}
+function uid(){return (Date.now()+Math.random()).toString(36);}
+function weekStart(d){const dt=new Date(d);const day=dt.getDay();const diff=dt.getDate()-day+(day===0?-6:1);dt.setDate(diff);dt.setHours(0,0,0,0);return dt;}
+function catBadge(cat){const c=CATS[cat]||CATS.Misc;return `<span class="badge ${c.cls}">${cat}</span>`;}
+function catSelect(id,val){
+  return `<select id="${id}" style="padding:4px 8px;font-size:11.5px;width:140px">${CAT_LIST.map(c=>`<option${c===val?' selected':''}>${c}</option>`).join('')}</select>`;
+}
+
+// ?????????????????????????????????????????
+//  NAVIGATION
+// ?????????????????????????????????????????
+function nav(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if((n.getAttribute('onclick')||'').includes("'"+id+"'")) n.classList.add('active');
+  });
+  const renders={dashboard:renderDashboard,finances:renderFinances,setup:renderSetup,goals:renderGoals};
+  if(renders[id]) renders[id]();
+}
+function shiftYear(d){ S.year+=d; save(); renderAll(); }
+function renderAll(){ renderDashboard(); if(document.getElementById('page-finances').classList.contains('active')) renderFinances(); }
+
+// ?????????????????????????????????????????
+//  CHARTS
+// ?????????????????????????????????????????
+let chartCashflow=null, chartDonut=null;
+const CHART_DEFAULTS={
+  color:'#8890A8',
+  font:{family:"'Inter'",size:11},
+  grid:{color:'rgba(37,40,54,0.8)'}
+};
+function buildCashflowChart(labels,income,expense,savings){
+  const ctx=document.getElementById('chart-cashflow').getContext('2d');
+  if(chartCashflow) chartCashflow.destroy();
+  chartCashflow=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Income',data:income,backgroundColor:'rgba(47,183,132,.18)',borderColor:'var(--green)',borderWidth:1.5,borderRadius:4,order:2},
+      {label:'Expenses',data:expense,backgroundColor:'rgba(224,84,84,.18)',borderColor:'var(--red)',borderWidth:1.5,borderRadius:4,order:2},
+      {label:'Saved',data:savings,type:'line',borderColor:'var(--slate)',backgroundColor:'rgba(91,143,191,.08)',borderWidth:2,tension:.35,pointRadius:3,pointBackgroundColor:'var(--slate)',fill:true,order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtAUD(c.raw)}`}}},
+      scales:{
+        x:{grid:{color:'rgba(37,40,54,.8)'},ticks:{color:'#8890A8',font:{size:10}}},
+        y:{grid:{color:'rgba(37,40,54,.8)'},ticks:{color:'#8890A8',font:{size:10,family:"'JetBrains Mono'"},callback:v=>'$'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v)}}
+      }
+    }
+  });
+}
+function buildDonutChart(labels,data,colors){
+  const ctx=document.getElementById('chart-donut').getContext('2d');
+  if(chartDonut) chartDonut.destroy();
+  if(!data.length){ctx.clearRect(0,0,300,300);return;}
+  chartDonut=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors.map(c=>c+'70'),borderColor:colors,borderWidth:1.5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{
+        legend:{position:'right',labels:{color:'#8890A8',font:{size:11},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${fmtAUD(c.raw)}`}}
+      }
+    }
+  });
+}
+
+// ?????????????????????????????????????????
+//  DASHBOARD
+// ?????????????????????????????????????????
+function renderDashboard(){
+  const yr=S.year;
+  const yTx=S.transactions.filter(t=>new Date(t.date).getFullYear()===yr);
+  document.getElementById('db-year').textContent=yr;
+
+  const inc=yTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const exp=Math.abs(yTx.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
+  const net=inc-exp;
+  const setupAUD=S.setupCosts.reduce((s,c)=>s+c.amountAUD,0);
+  const roi=net-setupAUD;
+
+  // Weeks active
+  const weeks=yTx.length? Math.max(1,Math.ceil((new Date(yTx.reduce((a,b)=>new Date(a.date)<new Date(b.date)?a:b).date)-new Date(yTx.reduce((a,b)=>new Date(a.date)>new Date(b.date)?a:b).date))/604800000)+1) : 1;
+  const wklyAvg=weeks>0?net/weeks:0;
+
+  document.getElementById('db-income').textContent=fmtAUD(inc);
+  document.getElementById('db-income-n').textContent=`${yTx.filter(t=>t.amount>0).length} credits`;
+  document.getElementById('db-spent').textContent=fmtAUD(exp);
+  document.getElementById('db-spent-n').textContent=`${yTx.filter(t=>t.amount<0).length} debits`;
+  document.getElementById('db-net').textContent=fmtAUD(net);
+  document.getElementById('db-net').style.color=net>=0?'var(--slate)':'var(--red)';
+  document.getElementById('db-wkly').textContent=`${fmtAUD(wklyAvg)} / week avg`;
+  document.getElementById('db-roi').textContent=fmtAUD(roi);
+  document.getElementById('db-roi').style.color=roi>=0?'var(--amber)':'var(--red)';
+  document.getElementById('db-roi-sub').textContent=roi>=0?'Break-even reached OK':'Before break-even';
+
+  const annualGoal=S.goals.annual||28000;
+  const pct=annualGoal>0?Math.min(100,Math.round(net/annualGoal*100)):0;
+  document.getElementById('db-saved-big').textContent=fmtAUD(net);
+  document.getElementById('db-goal-of').textContent=fmtAUD(annualGoal);
+  document.getElementById('db-goal-bar').style.width=Math.max(0,pct)+'%';
+  // pill
+  const pillEl=document.getElementById('db-goal-pct');
+  pillEl.textContent=pct+'% achieved';
+  pillEl.className='pill '+(pct>=100?'pill-up':pct>=50?'pill-warn':'pill-dn');
+  document.getElementById('db-goal-rem').textContent=fmtAUD(Math.max(0,annualGoal-net))+' remaining';
+  document.getElementById('db-setup-tot').textContent=fmtAUD(setupAUD);
+  document.getElementById('db-period-label').textContent=`${yr} . ${yTx.length} transactions`;
+
+  // Debt remaining
+  const debtRem=Math.max(0,(S.goals.debtTotal||0)-(S.goals.debtRepaid||0));
+  const debtEl=document.getElementById('db-debt-rem');
+  if(debtEl) debtEl.textContent=S.goals.debtTotal?fmtAUD(debtRem):'Not set';
+
+  // Annual ETA on dashboard
+  const wGoal=S.goals.weekly||600;
+  const etaEl=document.getElementById('db-goal-eta');
+  if(etaEl){
+    const annualRem=Math.max(0,annualGoal-Math.max(0,net));
+    if(annualRem>0&&wGoal>0){
+      const w=Math.ceil(annualRem/wGoal);
+      const eta=new Date(); eta.setDate(eta.getDate()+w*7);
+      etaEl.textContent=`~${eta.toLocaleDateString('en-AU',{month:'short',day:'numeric',year:'numeric'})} (${w}w)`;
+    } else if(net>=annualGoal){
+      etaEl.textContent='OK Goal reached';
+    } else {
+      etaEl.textContent='Set a weekly goal';
+    }
+  }
+
+  // Break-even ETA
+  if(roi<0 && wGoal>0){
+    const weeksLeft=Math.ceil(Math.abs(roi)/wGoal);
+    const eta=new Date(); eta.setDate(eta.getDate()+weeksLeft*7);
+    document.getElementById('db-breakeven').textContent=`~${eta.toLocaleDateString('en-AU',{month:'short',day:'numeric',year:'numeric'})} (${weeksLeft}w)`;
+  } else {
+    document.getElementById('db-breakeven').textContent=roi>=0?'OK Already recovered':'Set a weekly goal';
+  }
+
+  // Charts
+  const mInc=Array(12).fill(0), mExp=Array(12).fill(0);
+  yTx.forEach(t=>{
+    const m=new Date(t.date).getMonth();
+    if(t.amount>0) mInc[m]+=t.amount; else mExp[m]+=Math.abs(t.amount);
+  });
+  buildCashflowChart(MONTHS_SHORT,mInc,mExp,mInc.map((v,i)=>v-mExp[i]));
+
+  const catExp={};
+  yTx.filter(t=>t.amount<0).forEach(t=>{ catExp[t.category]=(catExp[t.category]||0)+Math.abs(t.amount); });
+  const cEntries=Object.entries(catExp).sort((a,b)=>b[1]-a[1]);
+  buildDonutChart(cEntries.map(e=>e[0]),cEntries.map(e=>e[1]),cEntries.map(e=>(CATS[e[0]]||CATS.Misc).color));
+
+  // Recent
+  const recent=[...S.transactions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,12);
+  document.getElementById('db-recent').innerHTML=recent.length?recent.map(t=>{
+    const d=new Date(t.date);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--rule)">
+      <div style="flex:1;min-width:0;padding-right:10px">
+        <div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)">${t.description}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px">${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} . ${t.category}</div>
+      </div>
+      <div style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;color:${t.amount>0?'var(--green)':'var(--red)'}">${fmtAUD(t.amount,true)}</div>
+    </div>`;
+  }).join(''):'<div style="padding:32px 16px;text-align:center;color:var(--t3);font-size:12.5px">No transactions yet.<br>Import a CSV or add entries manually.</div>';
+}
+
+// ?????????????????????????????????????????
+//  FINANCES
+// ?????????????????????????????????????????
+function renderFinances(){
+  const yr=S.year, mo=S.month;
+  document.getElementById('fin-year').textContent=yr;
+
+  // Month nav
+  const yTx=S.transactions.filter(t=>new Date(t.date).getFullYear()===yr);
+  const activeMo=new Set(yTx.map(t=>new Date(t.date).getMonth()));
+  document.getElementById('fin-month-nav').innerHTML=MONTHS_SHORT.map((m,i)=>
+    `<div style="padding:5px 10px;border-radius:6px;font-size:11.5px;font-weight:500;cursor:pointer;transition:all .12s;
+      background:${i===mo?'var(--acc10)':'transparent'};color:${i===mo?'var(--green)':activeMo.has(i)?'var(--t2)':'var(--t3)'};"
+      onclick="S.month=${i};save();renderFinances()">${m}</div>`
+  ).join('');
+
+  const mTx=yTx.filter(t=>new Date(t.date).getMonth()===mo);
+  const mInc=mTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const mExp=Math.abs(mTx.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
+  const mNet=mInc-mExp;
+
+  document.getElementById('fin-m-income').textContent=fmtAUD(mInc);
+  document.getElementById('fin-m-spent').textContent=fmtAUD(mExp);
+  document.getElementById('fin-m-net').textContent=fmtAUD(mNet);
+  document.getElementById('fin-m-net').style.color=mNet>=0?'var(--slate)':'var(--red)';
+
+  // Income categories
+  const incomeTx=mTx.filter(t=>t.amount>0);
+  const expTx=mTx.filter(t=>t.amount<0);
+  renderCatPanel('fin-income-bars','fin-income-cats',incomeTx,true,mInc);
+  renderCatPanel('fin-expense-bars','fin-expense-cats',expTx,false,mExp);
+
+  // Weekly breakdown
+  renderWeeks(mTx);
+}
+
+// ?? Single transaction row (reused everywhere) ??????????????????
+function txRow(t){
+  const d=new Date(t.date);
+  const ds=`${pad(d.getDate())}/${pad(d.getMonth()+1)}`;
+  const c=CATS[t.category]||CATS.Misc;
+  const amtColor=t.amount>0?'var(--green)':'var(--red)';
+  return `<tr id="row-${t.id}">
+    <td style="color:var(--t3);width:58px;font-variant-numeric:tabular-nums;font-size:11.5px">${ds}</td>
+    <td style="max-width:200px">
+      <span class="editable" title="Click to edit description" onclick="editDesc('${t.id}',this)"
+        style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</span>
+    </td>
+    <td style="width:130px">
+      <span class="editable" title="Click to change category" onclick="editCat('${t.id}',this)">
+        <span class="badge ${c.cls}">${t.category}</span>
+      </span>
+    </td>
+    <td style="text-align:right;width:88px">
+      <span class="editable" title="Click to edit amount" onclick="editAmt('${t.id}',this)"
+        style="font-variant-numeric:tabular-nums;font-weight:700;color:${amtColor}">${fmtAUD(t.amount,true)}</span>
+    </td>
+    <td style="text-align:right;width:28px">
+      <button onclick="delTx('${t.id}')" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:13px;padding:2px 5px;border-radius:3px;transition:color .1s" title="Delete">x</button>
+    </td>
+  </tr>`;
+}
+
+// ?? Inline edit helpers ?????????????????????????????????????????
+function editDesc(id, el){
+  const t=S.transactions.find(x=>x.id===id); if(!t) return;
+  const inp=document.createElement('input');
+  inp.className='inline-edit'; inp.value=t.description; inp.style.minWidth='160px';
+  el.replaceWith(inp); inp.focus(); inp.select();
+  const commit=()=>{
+    if(inp.value.trim()) t.description=inp.value.trim();
+    save(); refreshRow(id);
+  };
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){inp.value=t.description;inp.blur();} });
+}
+
+function editCat(id, el){
+  const t=S.transactions.find(x=>x.id===id); if(!t) return;
+  const sel=document.createElement('select');
+  sel.className='inline-select';
+  CAT_LIST.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; if(c===t.category) o.selected=true; sel.appendChild(o); });
+  el.replaceWith(sel); sel.focus();
+  const commit=()=>{ t.category=sel.value; save(); refreshRow(id); renderFinances(); renderDashboard(); };
+  sel.addEventListener('change',commit);
+  sel.addEventListener('blur',()=>{ t.category=sel.value; save(); refreshRow(id); renderFinances(); renderDashboard(); });
+}
+
+function editAmt(id, el){
+  const t=S.transactions.find(x=>x.id===id); if(!t) return;
+  const inp=document.createElement('input');
+  inp.className='inline-edit'; inp.type='number'; inp.step='0.01';
+  inp.value=Math.abs(t.amount); inp.style.width='90px'; inp.style.textAlign='right';
+  el.replaceWith(inp); inp.focus(); inp.select();
+  const commit=()=>{
+    const v=parseFloat(inp.value);
+    if(!isNaN(v)&&v>0) t.amount=t.amount<0?-v:v;
+    save(); refreshRow(id); renderDashboard();
+  };
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') inp.blur(); if(e.key==='Escape') inp.blur(); });
+}
+
+function refreshRow(id){
+  const t=S.transactions.find(x=>x.id===id); if(!t) return;
+  const row=document.getElementById('row-'+id); if(!row) return;
+  row.outerHTML=txRow(t);
+}
+
+function delTx(id){
+  if(!confirm('Delete this transaction?')) return;
+  S.transactions=S.transactions.filter(t=>t.id!==id);
+  save(); renderFinances(); renderDashboard(); toast('Transaction deleted');
+}
+
+// ?? Category panel ??????????????????????????????????????????????
+function renderCatPanel(barsId,catsId,txs,isIncome,total){
+  const bycat={};
+  txs.forEach(t=>{
+    if(!bycat[t.category]) bycat[t.category]=[];
+    bycat[t.category].push(t);
+  });
+  const entries=Object.entries(bycat).sort((a,b)=>
+    Math.abs(b[1].reduce((s,t)=>s+t.amount,0))-Math.abs(a[1].reduce((s,t)=>s+t.amount,0))
+  );
+  const maxAmt=entries.reduce((m,e)=>Math.max(m,Math.abs(e[1].reduce((s,t)=>s+t.amount,0))),0);
+
+  document.getElementById(barsId).innerHTML=entries.length?entries.map(([cat,catTx])=>{
+    const amt=Math.abs(catTx.reduce((s,t)=>s+t.amount,0));
+    const pct=maxAmt>0?Math.round(amt/maxAmt*100):0;
+    const c=CATS[cat]||CATS.Misc;
+    return `<div class="spend-bar-row">
+      <div class="spend-bar-label">${cat}</div>
+      <div class="spend-bar-fill-wrap"><div class="spend-bar-fill" style="width:${pct}%;background:${c.color}"></div></div>
+      <div class="spend-bar-amt" style="color:${c.color}">${fmtAUD(amt)}</div>
+    </div>`;
+  }).join(''):'<div style="padding:10px 0;color:var(--t3);font-size:12px">No transactions this month</div>';
+
+  document.getElementById(catsId).innerHTML=entries.length?entries.map(([cat,catTx])=>{
+    const amt=catTx.reduce((s,t)=>s+t.amount,0);
+    const c=CATS[cat]||CATS.Misc;
+    const cid='cb-'+cat.replace(/\W/g,'_')+barsId;
+    return `<div>
+      <div class="cat-row" onclick="toggleCat('${cid}')">
+        <div style="flex:1;display:flex;align-items:center;gap:8px">
+          <span class="badge ${c.cls}">${cat}</span>
+          <span style="font-size:11px;color:var(--t3)">${catTx.length} tx</span>
+        </div>
+        <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:${c.color}">${fmtAUD(Math.abs(amt))}</span>
+        <span style="color:var(--t3);margin-left:8px;font-size:11px">v</span>
+      </div>
+      <div class="cat-expand" id="${cid}">
+        <table class="tbl" style="font-size:12px">
+          <thead><tr>
+            <th style="width:58px">Date</th><th>Description</th>
+            <th style="width:130px">Category</th>
+            <th style="text-align:right;width:88px">Amount</th>
+            <th style="width:28px"></th>
+          </tr></thead>
+          <tbody>${catTx.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>txRow(t)).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join(''):'';
+}
+
+function toggleCat(id){
+  const el=document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}
+
+// ?? Weekly breakdown ????????????????????????????????????????????
+function renderWeeks(mTx){
+  const search=(document.getElementById('fin-search')?.value||'').toLowerCase();
+  const filtered=mTx.filter(t=>!search||t.description.toLowerCase().includes(search)||t.category.toLowerCase().includes(search));
+  const byWeek={};
+  filtered.forEach(t=>{
+    const ws=weekStart(new Date(t.date)).toISOString();
+    if(!byWeek[ws]) byWeek[ws]={start:new Date(ws),txs:[]};
+    byWeek[ws].txs.push(t);
+  });
+  const keys=Object.keys(byWeek).sort((a,b)=>new Date(b)-new Date(a));
+  const container=document.getElementById('fin-weeks');
+  if(!keys.length){
+    container.innerHTML=`<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:28px;margin-bottom:8px">?</div>No transactions for this period</div>`;
+    return;
+  }
+  container.innerHTML=keys.map(key=>{
+    const {start,txs}=byWeek[key];
+    const end=new Date(start); end.setDate(end.getDate()+6);
+    const wInc=txs.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+    const wExp=Math.abs(txs.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
+    const wNet=wInc-wExp;
+    const fmt=d=>`${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+    const wid='wk-'+key.substring(0,10).replace(/-/g,'');
+    return `
+      <div class="week-row" onclick="toggleCat('${wid}')">
+        <span style="font-size:12.5px;font-weight:600">${fmt(start)} - ${fmt(end)}</span>
+        <div style="display:flex;gap:16px;align-items:center">
+          <span style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--green)">${fmtAUD(wInc)}</span>
+          <span style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--red)">${fmtAUD(wExp)}</span>
+          <span style="font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;color:${wNet>=0?'var(--slate)':'var(--red)'}">${fmtAUD(wNet,true)}</span>
+          <span style="color:var(--t3);font-size:11px">v</span>
+        </div>
+      </div>
+      <div class="cat-expand" id="${wid}">
+        <table class="tbl" style="font-size:12px">
+          <thead><tr>
+            <th style="width:58px">Date</th><th>Description</th>
+            <th style="width:130px">Category</th>
+            <th style="text-align:right;width:88px">Amount</th>
+            <th style="width:28px"></th>
+          </tr></thead>
+          <tbody>${txs.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(t=>txRow(t)).join('')}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+}
+
+
+// ?????????????????????????????????????????
+//  CSV IMPORT
+// ?????????????????????????????????????????
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])processCSV(e.dataTransfer.files[0]);});
+function handleCSV(inp){if(inp.files[0])processCSV(inp.files[0]);}
+
+let pending=[];
+function processCSV(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const rows=parseCSV(e.target.result);
+      if(!rows.length){toast('No valid rows found','err');return;}
+      pending=rows;
+      showPreview(rows);
+    }catch(ex){toast('Parse error: '+ex.message,'err');}
+  };
+  r.readAsText(file);
+}
+function csvSplit(line){
+  const out=[];let cur='',inQ=false;
+  for(const c of line){if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){out.push(cur.trim());cur='';}else cur+=c;}
+  out.push(cur.trim()); return out;
+}
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2) return [];
+  let start=0;
+  const hdr=lines[0].toLowerCase();
+  if(hdr.includes('date')||hdr.includes('amount')||hdr.includes('debit')||hdr.includes('credit')) start=1;
+  const out=[];
+  for(let i=start;i<lines.length;i++){
+    const cols=csvSplit(lines[i]);
+    if(cols.length<2) continue;
+    let date=null,amount=null,desc='';
+    for(const c of cols){const d=parseDate(c);if(d){date=d;break;}}
+    if(!date) continue;
+    for(const c of cols){
+      const clean=c.replace(/[$,\s"]/g,'');
+      const n=parseFloat(clean);
+      if(!isNaN(n)&&clean!==''&&Math.abs(n)>0&&Math.abs(n)<1000000&&!parseDate(c)){amount=n;break;}
+    }
+    if(amount===null) continue;
+    let maxL=0;
+    for(const c of cols){const cl=c.replace(/"/g,'').trim();if(!parseDate(cl)&&isNaN(parseFloat(cl.replace(/[$,]/g,''))&&cl.length>maxL)){desc=cl;maxL=cl.length;}}
+    out.push({id:uid(),date:date.toISOString(),amount,description:desc||'Transaction',category:autocat(desc,amount),notes:''});
+  }
+  return out;
+}
+function showPreview(rows){
+  document.getElementById('import-preview').style.display='block';
+  document.getElementById('import-count-label').textContent=`${rows.length} rows detected`;
+  const tbody=document.getElementById('import-tbody');
+  tbody.innerHTML='';
+  rows.forEach((row,i)=>{
+    const d=new Date(row.date);
+    const ds=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="mono" style="font-size:11.5px;white-space:nowrap">${ds}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px" title="${row.description}">${row.description}</td>
+      <td class="mono" style="color:${row.amount>0?'var(--green)':'var(--red)'};font-size:12px;white-space:nowrap">${fmtAUD(row.amount,true)}</td>
+      <td>${catSelect('imp-cat-'+i,row.category)}</td>
+      <td><button class="btn btn-red btn-xs" onclick="pending.splice(${i},1);showPreview(pending)">x</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function cancelImport(){pending=[];document.getElementById('import-preview').style.display='none';document.getElementById('csv-input').value='';}
+function confirmImport(){
+  const existing=new Set(S.transactions.map(t=>t.id));
+  const selects=document.querySelectorAll('[id^="imp-cat-"]');
+  selects.forEach((sel,i)=>{if(pending[i]) pending[i].category=sel.value;});
+  const newOnes=pending.filter(r=>!existing.has(r.id));
+  S.transactions.push(...newOnes);
+  S.transactions.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  pending=[];
+  save();
+  document.getElementById('import-preview').style.display='none';
+  document.getElementById('csv-input').value='';
+  toast(`OK Imported ${newOnes.length} transactions`);
+  renderDashboard();
+}
+
+// ?????????????????????????????????????????
+//  SETUP COSTS
+// ?????????????????????????????????????????
+function saveRate(){
+  const v=parseFloat(document.getElementById('usd-rate').value);
+  if(v>0){S.usdRate=v;save();}
+}
+function saveParentCapital(){
+  const usd=parseFloat(document.getElementById('pc-usd').value)||0;
+  const repaid=parseFloat(document.getElementById('pc-repaid').value)||0;
+  S.parentCapital={usd, repaidAUD:repaid};
+  // Auto-sync into goals debt so Goals page always reflects reality
+  S.goals.debtTotal=usd*(S.usdRate||1.55);
+  S.goals.debtRepaid=repaid;
+  save();
+}
+function renderSetup(){
+  const rate=S.usdRate||1.55;
+  if(document.getElementById('usd-rate')) document.getElementById('usd-rate').value=rate;
+  document.getElementById('rate-display').textContent=rate.toFixed(4);
+
+  // Parent capital block
+  const pc=S.parentCapital||{usd:4900,repaidAUD:0};
+  const pcAUD=pc.usd*rate;
+  const pcRem=Math.max(0,pcAUD-pc.repaidAUD);
+  const pcPct=pcAUD>0?Math.min(100,Math.round((pc.repaidAUD/pcAUD)*100)):0;
+
+  const pcUsdEl=document.getElementById('pc-usd');
+  const pcRepEl=document.getElementById('pc-repaid');
+  if(pcUsdEl&&!pcUsdEl.matches(':focus')) pcUsdEl.value=pc.usd||4900;
+  if(pcRepEl&&!pcRepEl.matches(':focus')) pcRepEl.value=pc.repaidAUD||0;
+
+  document.getElementById('pc-aud-total').textContent=fmtAUD(pcAUD);
+  document.getElementById('pc-remaining').textContent=fmtAUD(pcRem);
+  document.getElementById('pc-bar').style.width=pcPct+'%';
+  document.getElementById('pc-pct').textContent=pcPct+'% repagado';
+  document.getElementById('sc-parent-aud').textContent=fmtAUD(pcAUD);
+  document.getElementById('sc-parent-usd-label').textContent='USD '+pc.usd.toLocaleString();
+
+  // ETA for parent capital
+  const wGoal=S.goals.weekly||600;
+  const etaEl=document.getElementById('pc-eta-label');
+  if(pcRem>0&&wGoal>0){
+    const w=Math.ceil(pcRem/wGoal);
+    const eta=new Date(); eta.setDate(eta.getDate()+w*7);
+    etaEl.textContent=`Libre de deuda: ~${eta.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})} (${w}w a ${fmtAUD(wGoal)}/wk)`;
+    etaEl.style.color='var(--amber)';
+  } else if(pcRem===0&&pc.usd>0){
+    etaEl.textContent='OK Deuda saldada';
+    etaEl.style.color='var(--green)';
+  } else {
+    etaEl.textContent='Configura el capital y el goal semanal';
+    etaEl.style.color='var(--t3)';
+  }
+
+  // Setup costs (excluding parent capital)
+  const totalSetupAUD=S.setupCosts.reduce((s,c)=>s+c.amountAUD,0);
+  const grandTotal=totalSetupAUD+pcAUD;
+  const allTx=S.transactions;
+  const net=allTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0)
+            -Math.abs(allTx.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
+  const roi=net-grandTotal;
+
+  document.getElementById('sc-total-aud').textContent=fmtAUD(totalSetupAUD);
+  document.getElementById('sc-grand-total').textContent=fmtAUD(grandTotal);
+  document.getElementById('sc-roi').textContent=fmtAUD(roi);
+  document.getElementById('sc-roi').style.color=roi>=0?'var(--green)':'var(--red)';
+
+  // Sync goals debt fields
+  S.goals.debtTotal=pcAUD;
+  S.goals.debtRepaid=pc.repaidAUD;
+
+  const body=document.getElementById('sc-body');
+  const empty=document.getElementById('sc-empty');
+  if(!S.setupCosts.length){body.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  body.innerHTML=S.setupCosts.map((c,i)=>{
+    const d=new Date(c.date);
+    const ds=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    const usdEq=rate>0?(c.amountAUD/rate):0;
+    return `<tr>
+      <td><span class="badge b-setup">${c.category}</span></td>
+      <td style="font-size:12.5px">${c.description}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--t3);font-size:12px">$${usdEq.toFixed(2)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--amber);font-weight:600">${fmtAUD(c.amountAUD)}</td>
+      <td style="color:var(--t3);font-size:12px">${ds}</td>
+      <td><button class="btn btn-red btn-xs" onclick="delSetup(${i})">x</button></td>
+    </tr>`;
+  }).join('');
+}
+function openSetupModal(prefill){
+  document.getElementById('sc-date').value=toInputDate(new Date());
+  if(prefill) document.getElementById('sc-cat').value=prefill;
+  document.getElementById('setup-modal').style.display='flex';
+}
+function closeSetupModal(){document.getElementById('setup-modal').style.display='none';}
+function quickSetup(cat){openSetupModal(cat);}
+function updateSCPreview(){
+  const cur=document.getElementById('sc-currency').value;
+  const amt=parseFloat(document.getElementById('sc-amount').value)||0;
+  const prev=document.getElementById('sc-conversion-preview');
+  if(cur==='USD'&&amt>0){
+    const aud=amt*(S.usdRate||1.55);
+    document.getElementById('sc-aud-preview').textContent=fmtAUD(aud);
+    prev.style.display='block';
+  } else { prev.style.display='none'; }
+}
+function saveSetupCost(){
+  const cat=document.getElementById('sc-cat').value;
+  const desc=document.getElementById('sc-desc').value.trim();
+  const cur=document.getElementById('sc-currency').value;
+  const amt=parseFloat(document.getElementById('sc-amount').value);
+  const date=document.getElementById('sc-date').value;
+  if(!desc){toast('Enter a description','err');return;}
+  if(!amt||amt<=0){toast('Enter a valid amount','err');return;}
+  const amountAUD=cur==='USD'?amt*(S.usdRate||1.55):amt;
+  const amountOrig=amt;
+  S.setupCosts.push({category:cat,description:desc,currency:cur,amountOrig,amountAUD,date:new Date(date).toISOString()});
+  save(); closeSetupModal(); renderSetup(); renderDashboard();
+  toast('Setup cost saved');
+  document.getElementById('sc-desc').value='';
+  document.getElementById('sc-amount').value='';
+}
+function delSetup(i){S.setupCosts.splice(i,1);save();renderSetup();renderDashboard();toast('Deleted');}
+
+// ?????????????????????????????????????????
+//  GOALS
+// ?????????????????????????????????????????
+function saveGoals(){
+  S.goals.weekly=parseFloat(document.getElementById('g-weekly').value)||0;
+  S.goals.annual=parseFloat(document.getElementById('g-annual').value)||0;
+  const pc=S.parentCapital||{usd:4900,repaidAUD:0};
+  S.goals.debtTotal=pc.usd*(S.usdRate||1.55);
+  S.goals.debtRepaid=pc.repaidAUD;
+  save();
+}
+function renderGoals(){
+  const g=S.goals;
+  document.getElementById('g-weekly').value=g.weekly||600;
+  document.getElementById('g-annual').value=g.annual||28000;
+
+  const pc=S.parentCapital||{usd:4900,repaidAUD:0};
+  const rate=S.usdRate||1.55;
+  const debtTotal=pc.usd*rate;
+  const debtRepaid=pc.repaidAUD||0;
+  const debtRem=Math.max(0,debtTotal-debtRepaid);
+  const debtPct=debtTotal>0?Math.min(100,Math.round((debtRepaid/debtTotal)*100)):0;
+
+  const dsEl=document.getElementById('g-debt-sync');
+  const drEl=document.getElementById('g-repaid-sync');
+  if(dsEl) dsEl.textContent=fmtAUD(debtTotal);
+  if(drEl) drEl.textContent=fmtAUD(debtRepaid);
+
+  document.getElementById('g-debt-rem').textContent=fmtAUD(debtRem);
+  document.getElementById('g-debt-paid').textContent=fmtAUD(debtRepaid);
+  document.getElementById('g-debt-bar').style.width=debtPct+'%';
+  document.getElementById('g-debt-pct').textContent=`${debtPct}% repaid`;
+
+  const wGoal=g.weekly||600;
+  if(debtRem>0&&wGoal>0){
+    const wLeft=Math.ceil(debtRem/wGoal);
+    const eta=new Date(); eta.setDate(eta.getDate()+wLeft*7);
+    document.getElementById('g-debt-eta').innerHTML=`A ${fmtAUD(wGoal)}/wk -> libre de deuda <b style="color:var(--amber)">${eta.toLocaleDateString('en-AU',{month:'long',day:'numeric',year:'numeric'})}</b> (${wLeft} semanas)`;
+  } else if(debtRem===0&&debtTotal>0){
+    document.getElementById('g-debt-eta').innerHTML='<span style="color:var(--green)">OK Deuda saldada completamente</span>';
+  } else {
+    document.getElementById('g-debt-eta').textContent='Configura el capital en Setup Costs';
+  }
+
+  const calcInput=document.getElementById('calc-override');
+  if(!calcInput.value) calcInput.value=wGoal;
+  const calcOverride=parseFloat(calcInput.value)||wGoal;
+
+  const allTx=S.transactions;
+  const totalInc=allTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const totalExp=Math.abs(allTx.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
+  const totalNet=totalInc-totalExp;
+
+  document.getElementById('calc-saved-now').textContent=fmtAUD(Math.max(0,totalNet));
+  const weeksAcc=calcOverride>0?Math.floor(Math.max(0,totalNet)/calcOverride):0;
+  document.getElementById('calc-saved-weeks').textContent=weeksAcc+' wks accumulated';
+
+  const annualGoal=g.annual||28000;
+  const annualRem=Math.max(0,annualGoal-Math.max(0,totalNet));
+  if(annualRem>0&&calcOverride>0){
+    const w=Math.ceil(annualRem/calcOverride);
+    const d=new Date(); d.setDate(d.getDate()+w*7);
+    document.getElementById('calc-annual-date').textContent=d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+    document.getElementById('calc-annual-weeks').textContent=w+' weeks away';
+  } else if(annualRem===0){
+    document.getElementById('calc-annual-date').textContent='OK Reached';
+    document.getElementById('calc-annual-weeks').textContent='Goal achieved!';
+  } else {
+    document.getElementById('calc-annual-date').textContent='-';
+    document.getElementById('calc-annual-weeks').textContent='Set a weekly goal';
+  }
+
+  if(debtRem>0&&calcOverride>0){
+    const w=Math.ceil(debtRem/calcOverride);
+    const d=new Date(); d.setDate(d.getDate()+w*7);
+    document.getElementById('calc-debt-date').textContent=d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+    document.getElementById('calc-debt-weeks').textContent=w+' weeks away';
+  } else if(debtRem===0&&debtTotal>0){
+    document.getElementById('calc-debt-date').textContent='OK Done';
+    document.getElementById('calc-debt-weeks').textContent='Debt cleared!';
+  } else {
+    document.getElementById('calc-debt-date').textContent='-';
+    document.getElementById('calc-debt-weeks').textContent='Config en Setup Costs';
+  }
+
+  buildTimeline(totalNet,calcOverride,annualGoal,debtRem);
+
+  const yr=S.year;
+  const monthlyTarget=calcOverride*52/12;
+  document.getElementById('g-monthly-bars').innerHTML=MONTHS_LONG.map((mn,i)=>{
+    const mTx=S.transactions.filter(t=>new Date(t.date).getFullYear()===yr&&new Date(t.date).getMonth()===i);
+    const mInc=mTx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+    const mExp=Math.abs(mTx.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
+    const mNet=mInc-mExp;
+    const pct=monthlyTarget>0?Math.min(100,Math.max(0,Math.round(mNet/monthlyTarget*100))):0;
+    const barCol=mNet>=monthlyTarget?'var(--green)':mNet>=0?'var(--amber)':'var(--red)';
+    const has=mTx.length>0;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)">
+      <div style="width:36px;font-size:12px;color:${has?'var(--t1)':'var(--t3)'};flex-shrink:0;font-weight:${has?'600':'400'}">${mn.substring(0,3)}</div>
+      <div style="flex:1"><div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${barCol}"></div></div></div>
+      <div style="width:90px;text-align:right;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:${!has?'var(--t3)':mNet>=0?'var(--green)':'var(--red)'}">${has?fmtAUD(mNet):'-'}</div>
+      <div style="width:36px;text-align:right;font-size:11px;color:var(--t3)">${has?pct+'%':''}</div>
+    </div>`;
+  }).join('');
+}
+
+
+function buildTimeline(savedNow,wkRate,annualGoal,debtRem){
+  const milestones=[];
+  // Debt milestones
+  if(debtRem>0) milestones.push({label:'Debt\nFree',target:savedNow+(debtRem),desc:'Debt cleared'});
+  // Annual goal
+  milestones.push({label:'Annual\nGoal',target:annualGoal,desc:fmtAUD(annualGoal)});
+  // Round number milestones
+  [5000,10000,15000,20000,25000,30000,35000,40000].forEach(v=>{
+    if(v>savedNow&&v!==annualGoal) milestones.push({label:fmtShort(v),target:v,desc:fmtAUD(v)});
+  });
+  milestones.sort((a,b)=>a.target-b.target);
+  const show=milestones.slice(0,6);
+
+  const now=new Date();
+  document.getElementById('calc-timeline').innerHTML=show.map((m,i)=>{
+    const rem=Math.max(0,m.target-savedNow);
+    const weeksLeft=wkRate>0?Math.ceil(rem/wkRate):0;
+    const eta=new Date(now); eta.setDate(eta.getDate()+weeksLeft*7);
+    const reached=savedNow>=m.target;
+    const isCurrent=!reached&&(i===0||(show[i-1]&&savedNow>=show[i-1].target));
+    return `<div class="calc-milestone">
+      <div class="calc-dot ${reached?'reached':isCurrent?'current':'future'}">
+        ${reached?'OK':isCurrent?'->':(i+1)}
+      </div>
+      <div style="font-size:10px;font-weight:600;color:${reached?'var(--green)':isCurrent?'var(--t1)':'var(--t3)'};white-space:pre-line;text-align:center;line-height:1.3">${m.label}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">${reached?'Done':eta.toLocaleDateString('en-AU',{month:'short',year:'2-digit'})}</div>
+    </div>`;
+  }).join('');
+}
+
+// ?????????????????????????????????????????
+//  MANUAL ADD
+// ?????????????????????????????????????????
+document.getElementById('add-date').value=toInputDate(new Date());
+function onTypeChange(){
+  const t=document.getElementById('add-type').value;
+  if(t==='income') document.getElementById('add-cat').value='Income';
+  else autoDetect();
+}
+function autoDetect(){
+  const t=document.getElementById('add-type').value;
+  if(t==='income'){document.getElementById('add-cat').value='Income';return;}
+  const desc=document.getElementById('add-desc').value;
+  const cat=autocat(desc,-1); // pass negative amount = expense context
+  document.getElementById('add-cat').value=(cat==='Income'?'Misc':cat);
+}
+function openAddFor(type){
+  document.getElementById('add-type').value=type;
+  onTypeChange();
+  nav('add');
+}
+function addTx(){
+  const date=document.getElementById('add-date').value;
+  const type=document.getElementById('add-type').value;
+  const desc=document.getElementById('add-desc').value.trim();
+  const amt=parseFloat(document.getElementById('add-amount').value);
+  const cat=document.getElementById('add-cat').value;
+  const notes=document.getElementById('add-notes').value.trim();
+  if(!date){toast('Select a date','err');return;}
+  if(!desc){toast('Enter a description','err');return;}
+  if(!amt||amt<=0){toast('Enter a valid amount','err');return;}
+  S.transactions.push({id:uid(),date:new Date(date).toISOString(),amount:type==='income'?amt:-amt,description:desc,category:cat,notes});
+  S.transactions.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  save(); toast('Transaction saved');
+  document.getElementById('add-desc').value='';
+  document.getElementById('add-amount').value='';
+  document.getElementById('add-notes').value='';
+  renderDashboard();
+}
+
+// ?????????????????????????????????????????
+//  EXPORT / IMPORT JSON
+// ?????????????????????????????????????????
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({...S,exportDate:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`ausfinance_${new Date().toISOString().split('T')[0]}.json`; a.click();
+  toast('Backup exported');
+}
+function importJSON(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=e=>{
+    const fr=new FileReader();
+    fr.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        if(d.transactions) S.transactions=d.transactions;
+        if(d.setupCosts)   S.setupCosts=d.setupCosts;
+        if(d.goals)        S.goals={...S.goals,...d.goals};
+        if(d.usdRate)      S.usdRate=d.usdRate;
+        save(); renderDashboard(); toast('Backup restored');
+      }catch(ex){toast('Invalid backup file','err');}
+    };
+    fr.readAsText(e.target.files[0]);
+  };
+  inp.click();
+}
+
+// ?????????????????????????????????????????
+//  TOAST
+// ?????????????????????????????????????????
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast'+(type==='err'?' err':'')+' show';
+  setTimeout(()=>el.className='toast',2800);
+}
+
+// ?????????????????????????????????????????
+//  INIT
+// ?????????????????????????????????????????
+load();
+// Ensure parentCapital exists on old saves
+if(!S.parentCapital) S.parentCapital={usd:4900,repaidAUD:0};
+// Apply saved values to inputs
+document.getElementById('g-weekly').value=S.goals.weekly||600;
+document.getElementById('g-annual').value=S.goals.annual||28000;
+document.getElementById('usd-rate').value=S.usdRate||1.55;
+// Parent capital inputs (populated when Setup page renders, but set here too)
+const _pcEl=document.getElementById('pc-usd');
+const _prEl=document.getElementById('pc-repaid');
+if(_pcEl) _pcEl.value=S.parentCapital.usd||4900;
+if(_prEl) _prEl.value=S.parentCapital.repaidAUD||0;
+// ?? Auth UI logic ??????????????????????????????????????
+let authMode = 'signin';
+
+function showAuthTab(mode){
+  authMode=mode;
+  const isSignup=mode==='signup';
+  document.getElementById('tab-signin').style.background=isSignup?'transparent':'var(--card)';
+  document.getElementById('tab-signin').style.color=isSignup?'var(--t2)':'var(--t1)';
+  document.getElementById('tab-signup').style.background=isSignup?'var(--card)':'transparent';
+  document.getElementById('tab-signup').style.color=isSignup?'var(--t1)':'var(--t2)';
+  document.getElementById('auth-btn').textContent=isSignup?'Create Account':'Sign In';
+  document.getElementById('auth-password-hint').style.display=isSignup?'block':'none';
+  document.getElementById('auth-error').style.display='none';
+  document.getElementById('auth-confirm-msg').style.display='none';
+}
+
+async function doAuth(){
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-password').value;
+  const errEl=document.getElementById('auth-error');
+  const loadEl=document.getElementById('auth-loading');
+  const btnEl=document.getElementById('auth-btn');
+  const confirmEl=document.getElementById('auth-confirm-msg');
+
+  errEl.style.display='none';
+  confirmEl.style.display='none';
+
+  if(!email||!pass){ errEl.textContent='Please enter email and password.'; errEl.style.display='block'; return; }
+  if(authMode==='signup'&&pass.length<6){ errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
+
+  btnEl.style.display='none'; loadEl.style.display='block';
+
+  try{
+    if(authMode==='signup'){
+      const d=await sbSignUp(email,pass);
+      loadEl.style.display='none'; btnEl.style.display='';
+      // Supabase may require email confirmation
+      if(d.access_token){ await onAuthSuccess(); }
+      else { confirmEl.style.display='block'; }
+    } else {
+      await sbSignIn(email,pass);
+      await onAuthSuccess();
+    }
+  }catch(e){
+    loadEl.style.display='none'; btnEl.style.display='';
+    errEl.textContent=e.message||'Authentication failed';
+    errEl.style.display='block';
+  }
+}
+
+async function onAuthSuccess(){
+  // Hide auth screen, show app
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-layout').style.display='flex';
+  // Update header
+  updateUserDisplay();
+  // Load cloud data
+  const loaded = await loadFromCloud();
+  if(!loaded){
+    // First time - load localStorage cache if any
+    load();
+    if(!S.parentCapital) S.parentCapital={usd:4900,repaidAUD:0};
+  }
+  renderDashboard();
+  renderSetup();
+}
+
+function updateUserDisplay(){
+  const email = _sbSession?.user?.email||'';
+  const el = document.getElementById('user-email-display');
+  if(el) el.textContent=email;
+  setSyncIndicator('saved');
+}
+
+async function signOut(){
+  if(!confirm('Sign out?')) return;
+  await sbSignOut();
+  // Show auth screen
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('app-layout').style.display='none';
+  setSyncIndicator('loggedout');
+  // Clear state
+  S=JSON.parse(JSON.stringify(DEFAULT_STATE));
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-password').value='';
+}
+
+async function manualSync(){
+  setSyncIndicator('syncing');
+  await loadFromCloud();
+  renderDashboard();
+  if(document.getElementById('page-finances').classList.contains('active')) renderFinances();
+  if(document.getElementById('page-setup').classList.contains('active')) renderSetup();
+  if(document.getElementById('page-goals').classList.contains('active')) renderGoals();
+  toast('OK Synced from cloud');
+}
+
+// ?? Boot: check existing session ???????????????????????
+async function bootApp(){
+  // Always show auth screen initially
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('app-layout').style.display='none';
+
+  // Try to restore existing session
+  if(sbLoadSession()){
+    // Try to refresh token (it may have expired)
+    const ok = await sbRefreshSession().catch(()=>false);
+    if(sbToken()){
+      await onAuthSuccess();
+      return;
+    }
+  }
+  // No valid session - show auth screen
+  setSyncIndicator('loggedout');
+}
+
+
+// -------------------------------------------------------
+//  INIT
+// -------------------------------------------------------
+load();
+if(!S.parentCapital) S.parentCapital={usd:4900,repaidAUD:0};
+document.getElementById('g-weekly').value=S.goals.weekly||600;
+document.getElementById('g-annual').value=S.goals.annual||28000;
+document.getElementById('usd-rate').value=S.usdRate||1.55;
+bootApp();
+
+</script>
+</body>
+</html>
